@@ -1,0 +1,11 @@
+domain: lfr31.com
+layout: go.kubebuilder.io/v2
+projectName: kube-operator-demo
+repo: github.com/lfranchini31/kube-operator-demo
+resources:
+- group: demo
+  kind: Demo
+  version: v1alpha1
+version: 3-alpha
+plugins:
+  go.sdk.operatorframework.io/v2-alpha: {}
