@@ -41,11 +41,20 @@ spec:
                 remove/update
               type: string
             size:
+              description: Size of demo deployment
               format: int32
               type: integer
           type: object
         status:
           description: DemoStatus defines the observed state of Demo
+          properties:
+            pods:
+              description: Pods are the names of demo pods
+              items:
+                type: string
+              type: array
+          required:
+          - pods
           type: object
       type: object
   version: v1alpha1

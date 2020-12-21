@@ -29,14 +29,18 @@ type DemoSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Demo. Edit Demo_types.go to remove/update
-	Foo  string `json:"foo,omitempty"`
-	Size int32  `json:"size,omitempty"`
+	Foo string `json:"foo,omitempty"`
+	// Size of demo deployment
+	Size int32 `json:"size,omitempty"`
 }
 
 // DemoStatus defines the observed state of Demo
 type DemoStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// Pods are the names of demo pods
+	Pods []string `json:"pods"`
 }
 
 // +kubebuilder:object:root=true

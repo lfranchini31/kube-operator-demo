@@ -1,5 +1,5 @@
 # kube-operator-demo
-Build a Kuberenetes operator with Operator SDK
+Build a Kubernetes operator with Operator SDK
 
 1. Create k3d demo-operator cluster (3 nodes)
    First, you need to install k3d distribution (allows to create containerized k3s clusters).
@@ -15,14 +15,26 @@ Build a Kuberenetes operator with Operator SDK
     ```bash
    operator-sdk create api --group demo --version v1alpha1 --kind Demo --resource=true --controller=true
    ```
+   - Modify the demo types in order to add:
+      - a size attribute to DemoSpec
+      - a pod array attribute to DemoStatus
+
+      And launch 'make generate':
+      ```bash
+      make generate
+      ```
    - Generating CRD manifests
        ```bash
        make manifests
        ```
-3. Implement the Controller
+       This makefile target will invoke controller-gen to generate the CRD manifests at config/crd/bases/demo.lfr31.com_demoes.yaml
+
+3. Implement the Controller (Business Logic -> Core of this operator ;)!)
    - Create a demo Deployment if it doesn’t exist
    - Ensure that the Deployment foo and size are the same as specified by the Demo CR spec
    - Update the Demo CR status using the status writer with the names of the demo pods
+
+   You can implement others features if you want ... to Infinity and Beyond!
 
 4. Build and run the operator
    ```bash
@@ -33,13 +45,68 @@ Build a Kuberenetes operator with Operator SDK
     ```bash
     make run ENABLE_WEBHOOKS=false
     ```
+
     - As a Deployment inside a Kubernetes cluster
-   ```bash
-    
-    ```
+      - Build and push the image
+      ```bash
+      # Build the image
+      export REGISTRY=<dockerhub-username>
+      # you need to be loggued to Docker registry -> docker login
+      make docker-build IMG=$REGISTRY/demo-operator:v0.0.1
+      # Push the image to the docker hub registry
+      make docker-push IMG=$REGISTRY/demo-operator:v0.0.1
+      ```
+      - Deploy the operator
+      For this demo we will run the operator in the demo namespace which can be specified for all resources in config/default/kustomization.yaml
+       ```bash
+       cd config/default/ && kustomize edit set namespace "demo" && cd ../..
+       ```
+       Install cert manager before deploy your operator
+       ```bash
+       kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.yaml
+       ```
+       Run the following to deploy the operator (also install the RBAC manifests from config/rbac)
+       ```bash
+       make deploy IMG=$REGISTRY/demo-operator:v0.0.1
+       ```
+       ```bash
+       $ kubectl get deploy
+         NAME                                    READY   UP-TO-DATE   AVAILABLE   AGE
+         demo-operator-controller-manager          1/1     1            1           20s
+       ```
 
+5. Create a Demo CR
+   - Update the sample Demo CR manifest at config/samples/demo_v1alpha1_demo.yaml and define the spec as the following:
+   ```yaml
+   apiVersion: demo.lfr31.com/v1alpha1
+   kind: Demo
+   metadata:
+     name: demo-sample
+   spec:
+     foo: bar
+     size: 3
+   ```
+   - Create the CR:
+     ```bash
+     kubectl apply -f config/samples/demo_v1alpha1_demo.yaml
+     ```
+     Ensure that the demo operator creates the deployment for the sample CR with the correct size:
+     ```bash
+     $ kubectl get deployment
+      NAME                                    READY   UP-TO-DATE   AVAILABLE   AGE
+      demo-operator-controller-manager   1/1     1            1           5m
+      demo-sample                        3/3     3            3           1m
+     ```
+     Check the pods and CR status to confirm the status is updated with the demo pod names:
+     ```bash
+     $ kubectl get po
+      NAME                                  READY     STATUS    RESTARTS   AGE
+      demo-sample-9df5c78d7-5pmde           1/1       Running   0          1m
+      demo-sample-9df5c78d7-5pmde           1/1       Running   0          1m
+      demo-sample-9df5c78d7-5pmde           1/1       Running   0          1m
+     ```
 
-5. Clean-up
+6. Clean-up
    - Delete the CR to uninstall Demo
    ```bash
    kubectl delete -f config/samples/demo_v1alpha1_demo.yaml
@@ -49,7 +116,7 @@ Build a Kuberenetes operator with Operator SDK
    kustomize build config/default | kubectl delete -f -
    ```
 
-99. Create a monitoring namespace and deploy prometheus operator
+(BONUS) - Create a monitoring namespace and deploy prometheus operator
    - Add bitnami helm repository
     ```bash
     kubectl create ns monitoring

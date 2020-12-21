@@ -22,3 +22,7 @@ bin
 *.swp
 *.swo
 *~
+
+# local
+testbin/
+test-resources.yaml
